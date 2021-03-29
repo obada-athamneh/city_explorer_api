@@ -8,7 +8,7 @@ const express = require('express');
 const cors = require('cors');
 
 // Application Setup
-const PORT = 3000;
+const PORT = process.env.PORT;
 const app = express();
 app.use(cors());
 
@@ -42,7 +42,9 @@ function handelWeather(req, res) {
     res.send(weatherData);
 
 }
-
+// function error (req, res){
+//     res.status(500).send('sorry')
+// }
 // constructors
 
 function Location(data , selected) {
@@ -56,7 +58,7 @@ function weather(forecast, time) {
     this.forecast = forecast;
     this.time = time;
 }
-
+    // app.use('*', error);
 app.use('*', (req, res) => {
     res.send('all good nothing to see here!');
 });

@@ -15,6 +15,9 @@ app.use(cors());
 // routes
 app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
+// numbers.map(number => {
+//     console.log(number);
+// });
 
 
 function handelLocation(req, res) {

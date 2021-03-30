@@ -25,7 +25,7 @@ app.get('/parks', handelParks);
 
 function handelLocation(req, res) {
 
-    const searchQuery = req.query.search_query;
+    const searchQuery = req.query.city;
     console.log(searchQuery);
     // let selected = searchQuery.city;
     // const locationsRawData = require('./data/location.json');

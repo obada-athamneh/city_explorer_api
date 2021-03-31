@@ -8,6 +8,8 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const request = require('superagent');
+const pg = require('pg');
+const client = new pg.Client(process.env.DATABASE_URL);
 
 // Application Setup
 const PORT = process.env.PORT;
@@ -24,17 +26,22 @@ app.get('/parks', handelParks);
 
 
 function handelLocation(req, res) {
+    let sql = 'SELECT *  FROM location';
 
+client.query(sql).then(result => {
+    console.log(result.rows);
+
+})
     const searchQuery = req.query.city;
-    console.log(searchQuery);
+    // console.log(searchQuery);
     // let selected = searchQuery.city;
     // const locationsRawData = require('./data/location.json');
     // const location = new Location(locationsRawData[0], selected)
 
     const url = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${searchQuery}&format=json`;
-    console.log('url', url);
+    // console.log('url', url);
     request.get(url)           
-        .then(response => {
+        .then(response => {   
             const formattedArr = response.body.map((loc) => {
                 return {
                     search_query: searchQuery,
@@ -43,6 +50,11 @@ function handelLocation(req, res) {
                     longitude: loc.lon
                 };   
             });
+            let mysql = 'INSERT INTO location (search_query, formatted_query, latitude, longitude) VALUES($1, $2, $3, $4) RETURNING *';
+            let values = [city, formattedArr[0].formatted_query, formattedArr[0].latitude, formattedArr[0].longitude];
+            client.query(mysql, values).then(results => {
+                console.log(results.rows);
+            })
             res.send(formattedArr[0]);
             // response.body, response.headers, response.status
         })
@@ -161,4 +173,9 @@ app.use('*', (req, res) => {
     res.send('all good nothing to see here!');
 });
 
-app.listen(PORT, () => console.log(`Listening to Port ${PORT}`));
+client.connect().then( () => {
+    app.listen(PORT, () => {
+      console.log("Connected to database:", client.connectionParameters.database) 
+      console.log('Server up on', PORT);
+    });
+  })

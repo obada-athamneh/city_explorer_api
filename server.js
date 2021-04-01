@@ -50,7 +50,7 @@ client.query(sql, citArr).then(result => {
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            // err.message, err.response
+            err.message, err.response
         });
         
 }})
@@ -79,7 +79,7 @@ function handelWeather(req, res) {
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            // err.message, err.response
+            err.message, err.response
         });
 }
 
@@ -114,7 +114,7 @@ function handelParks(req, res) {
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            // err.message, err.response
+            err.message, err.response
         });
 }
 

@@ -1,9 +1,5 @@
 'use strict';
 
-// Load Environment Variables from the .env file
-
-// require('dotenv').config();n   
-// Application Dependencies
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
@@ -20,24 +16,19 @@ app.use(cors());
 app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
 app.get('/parks', handelParks);
-// numbers.map(number => {
-//     console.log(number);
-// });
 
 
 function handelLocation(req, res) {
-    let sql = 'SELECT *  FROM location';
-
-client.query(sql).then(result => {
-    console.log(result.rows);
-
-})
     const searchQuery = req.query.city;
-    // console.log(searchQuery);
-    // let selected = searchQuery.city;
-    // const locationsRawData = require('./data/location.json');
-    // const location = new Location(locationsRawData[0], selected)
-
+    let sql = 'SELECT * FROM location WHERE search_query = $1';
+    let citArr = [searchQuery];
+client.query(sql, citArr).then(result => {
+    // console.log(result.rowCount);
+    if (result.rowCount){
+        // console.log(result.rows);
+        res.send(result.rows[0])
+    }else{
+    
     const url = `https://us1.locationiq.com/v1/search.php?key=${process.env.GEOCODE_API_KEY}&q=${searchQuery}&format=json`;
     // console.log('url', url);
     request.get(url)           
@@ -51,9 +42,9 @@ client.query(sql).then(result => {
                 };   
             });
             let mysql = 'INSERT INTO location (search_query, formatted_query, latitude, longitude) VALUES($1, $2, $3, $4) RETURNING *';
-            let values = [city, formattedArr[0].formatted_query, formattedArr[0].latitude, formattedArr[0].longitude];
+            let values = [searchQuery, formattedArr[0].formatted_query, formattedArr[0].latitude, formattedArr[0].longitude];
             client.query(mysql, values).then(results => {
-                console.log(results.rows);
+                // console.log(results.rows);
             })
             res.send(formattedArr[0]);
             // response.body, response.headers, response.status
@@ -61,7 +52,8 @@ client.query(sql).then(result => {
         .catch(err => {
             // err.message, err.response
         });
-
+        
+}})
 }
 const weatherData = [];
 function handelWeather(req, res) {
@@ -72,14 +64,7 @@ function handelWeather(req, res) {
     const url = `https://api.weatherbit.io/v2.0/forecast/daily?lat=${latitude}&lon=${longitude}&key=${process.env.WEATHER_API_KEY}`
 
 
-    // const weatherRawData = require('./data/weather.json');
-    // console.log('Iamhere');
-    // res.send(weatherRawData.data.map((item) => {
-    //     return {
-    //         forecast: item.weather.description,
-    //         time: item.valid_date,
-    //     }
-    // }));
+    
 
     request.get(url)
         .then(response => {
@@ -100,25 +85,32 @@ function handelWeather(req, res) {
 
 
 function handelParks(req, res) {
-
+    console.log('gggg');
     const key = process.env.PARKS_API_KEY;
-    // const longitude = req.query.longitude;
-    // const url = `https://us1.locationiq.com/v1/nearby.php?key=${process.env.PARKS_API_KEY}&lat=${latitude}&lon=${longitude}&tag=park&radius=IN_METERS&format=json`
-   const url = `https://developer.nps.gov/api/v1/parks?api_key=${key}`
+   const url = `https://developer.nps.gov/api/v1/parks?api_key=${key}&limit=10`;
 
     request.get(url)
         .then(response => {
-            const formattedArr = response.body.map((park) => {
-                return {
-                    name: park.name,
-                    address: park.address,
-                    fee: park.fee,
-                    description: park.description,
-                    url: park.url
+            // console.log(response.body)
+            const parksArr =[];
+             response.body.data.foreach((element) => {
+                let newUrl = element.url;
+                let fullName = element.fullName;
+                let newDes = element.description;
+                let Fee = element.entranceFees[0].cost;
+                let newAddress = element.addresses[0].line1 + ' ' + element.addresses[0].city;
+                let parkObject = {
+                   
+                    name: fullName,
+                    address: newAddress,
+                    fee: Fee,
+                    description: newDes,
+                    url:newUrl,
                 };
+                parksArr.push(parkObject);
             });
-
-            res.send(formattedArr.slice(0, 10));
+            console.log(parksArr);
+            res.send(parksArr);
             // response.body, response.headers, response.status
         })
         .catch(err => {
@@ -126,36 +118,7 @@ function handelParks(req, res) {
         });
 }
 
-function handelParks(req, res) {
 
-    const key = process.env.PARKS_API_KEY;
-    // const longitude = req.query.longitude;
-    // const url = `https://us1.locationiq.com/v1/nearby.php?key=${process.env.PARKS_API_KEY}&lat=${latitude}&lon=${longitude}&tag=park&radius=IN_METERS&format=json`
-   const url = `https://developer.nps.gov/api/v1/parks?api_key=${key}`
-
-    request.get(url)
-        .then(response => {
-            const formattedArr = response.body.data.map((park) => {
-                return {
-                    name: park.fullName,
-                    address: park.addresses[0].line1,
-                    fee: park.entranceFees[0].cost,
-                    description: park.description,
-                    url: park.url
-                };
-            });
-
-            res.send(formattedArr.slice(0, 10));
-            // response.body, response.headers, response.status
-        })
-        .catch(err => {
-            // err.message, err.response
-        });
-}
-// function error (req, res){
-//     res.status(500).send('sorry')
-// }
-// constructors
 
 function Location(data, selected) {
     this.search_query = selected;

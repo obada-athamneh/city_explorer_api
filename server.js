@@ -16,6 +16,80 @@ app.use(cors());
 app.get('/location', handelLocation);
 app.get('/weather', handelWeather);
 app.get('/parks', handelParks);
+app.get('/movies', handelMovies);
+app.get('/yelp', handleYelp);
+
+let moviesArr = [];
+function movies (title, overview, average_votes, total_votes, image_url, popularity, released_on){
+    this.title = title;
+    this.overview = overview;
+    this.average_votes = average_votes;
+    this.total_votes = total_votes;
+    this.image_url = image_url;
+    this.popularity = popularity;
+    this.released_on = released_on;
+    moviesArr.push(this);
+}
+
+function handelMovies(req, res){
+    let key = process.env.MOVIE_API_KEY;
+    let url = `https://api.themoviedb.org/3/movie/top_rated?api_key=${key}`
+    request.get(url).then(response => {
+        const mov = response.body.results;
+        mov.map( a => {
+            let img = `https://image.tmdb.org/t/p/w500${a.poster_path}`;
+            new movies(a.title, a.overview, a.vote_average, a.vote_count, img, a.popularity, a.release_date);
+            // console.log(moviesArr);
+            
+        })
+        res.send(moviesArr);
+    } )
+}
+
+let yelpArray = [];
+function Yelp(a,b,c,d,e){
+    this.name = a;
+    this.image_url = b;
+    this.price = c;
+    this.rating = d;
+    this.url = e;
+    yelpArray.push(this)
+}
+let id1 = 0;
+function handleYelp(req, res) {
+    
+    // console.log('booooody',req.query)
+    let yelp = process.env.YELP_API_KEY;
+
+    let url = `https://api.yelp.com/v3/businesses/search?term=restaurants&location=${req.query.city}&limit=25`;
+    request.get(url).set('Authorization', `Bearer ${yelp}`)
+    .then(res => {
+        let yelpData = res.body.businesses;
+        yelpArray = [];
+          yelpData.forEach(element => {
+              
+              let f = element.name;
+              let g = element.image_url;
+              let h = element.price;
+              let i = element.rating;
+              let j = element.url;
+              let newYelp = new Yelp(f,g,h,i,j);
+            });
+            return yelpArray;
+        
+        }).then((x)=> {
+           
+            let id2 = id1 + 5;
+            const resul = yelpArray.slice(id1, id2);
+            id1 +=5;
+            res.send(resul);
+        }).catch( error => {
+            console.log('ERROR', error);
+            res.status(500).send('So sorry, something went wrong.');
+          });
+        
+}
+
 
 
 function handelLocation(req, res) {
@@ -50,7 +124,7 @@ client.query(sql, citArr).then(result => {
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            err.message, err.response
+            // err.message, err.response
         });
         
 }})
@@ -79,19 +153,23 @@ function handelWeather(req, res) {
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            err.message, err.response
+            // err.message, err.response
         });
 }
 
 
 function handelParks(req, res) {
     console.log('gggg');
-    const key = process.env.PARKS_API_KEY;
-   const url = `https://developer.nps.gov/api/v1/parks?api_key=${key}&limit=10`;
+    // const key = process.env.PARKS_API_KEY;
+//    const url = `https://developer.nps.gov/api/v1/parks?api_key=${key}&q=${req.query.search_query}&limit=10`;
+let query = req.query.search_query;
 
+   let url = `https://developer.nps.gov/api/v1/parks?q=${query}&api_key=${process.env.PARKS_API_KEY}`;
+   
+    // console.log(req.query);
     request.get(url)
         .then(response => {
-            // console.log(response.body)
+            // console.log(response)
             const parksArr =[];
              response.body.data.foreach((element) => {
                 let newUrl = element.url;
@@ -109,12 +187,12 @@ function handelParks(req, res) {
                 };
                 parksArr.push(parkObject);
             });
-            console.log(parksArr);
+            // console.log(parksArr);
             res.send(parksArr);
             // response.body, response.headers, response.status
         })
         .catch(err => {
-            err.message, err.response
+            // err.message, err.response
         });
 }
 
